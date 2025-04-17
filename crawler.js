@@ -19,10 +19,8 @@
 const rulesService = require('./utils/rules');
 const filesService = require('./utils/files');
 const webService = require('./utils/web');
-const log = require('./utils/log');
-const _ = require('underscore');
+const _ = require('lodash');
 const config = require('./config');
-const parallel = require('paralleljs');
 
 const crawler = {
 
@@ -39,9 +37,9 @@ const crawler = {
     baseUrlHashes: config.base.split('/').length,
 
     getXml(xmUrl, limit) {
-        log.log(`Queuing ${xmUrl}`);
+        console.log(`Queuing ${xmUrl}`);
         webService.getWeb(xmUrl).then((data) => {
-            log.log(`Data received for ${xmUrl}`);
+            console.log(`Data received for ${xmUrl}: ${data.length}`);
             this.counter = this.counter + 1;
             this.allUrls = _.union(this.allUrls, rulesService.checkRules(data));
             if (this.counter === limit) {
@@ -53,7 +51,7 @@ const crawler = {
     /*
     * 1. Feed the base Url and fetch HTML
     * 2. Remove url from 'process' array
-    * 3. Push the url to 'processCompleted' 
+    * 3. Push the url to 'processCompleted'
     * 4. Filter the fetched urls for the following
     *   A) Urls already processed stored in 'processCompleted'
     *   B) Urls that are already present in queue stored in 'processes'
@@ -67,8 +65,8 @@ const crawler = {
 
             // Remove url from 'process' array
             const xmUrl = this.processes.pop();
-            log.log(`Queuing ${xmUrl}`);
-            
+            console.log(`Queuing ${xmUrl}`);
+
             this.counter = this.counter + 1;
 
             // Push the url to 'processCompleted'
@@ -77,13 +75,13 @@ const crawler = {
             // Feed the base Url and fetch HTML
             webService.getWeb(xmUrl).then((data) => {
 
-                log.log(`Data received for ${xmUrl}`);
+                console.log(`Data received for ${xmUrl}: ${data.length}`);
                 const newUrls = rulesService.checkRules(data);
                 this.allUrls = _.union(this.allUrls, newUrls);
 
-                log.log(`Data Queued ${this.counter} - Completed - ${this.dataFetched}`);
+                console.log(`Data Queued ${this.counter} - Completed - ${this.dataFetched}`);
                 this.dataFetched = this.dataFetched + 1;
-                                
+
                 if ((this.counter === this.dataFetched) && this.counter !== 1) {
                     filesService.createXml(rulesService.sortLinks(this.allUrls));
                 } else {
@@ -93,7 +91,7 @@ const crawler = {
         }
     },
 
-    queueUrls(urls) {        
+    queueUrls(urls) {
         // Filter Urls already processed stored in 'processCompleted'
         const removingCompleted = _.uniq(_.without(urls, ...this.processesCompleted));
         const removingQueued = _.without(removingCompleted, ...this.processes);
@@ -103,12 +101,11 @@ const crawler = {
         this.processesCompleted.push(...urlsIgnored);
         this.processes = _.uniq([...this.processes, ...removingIngoreLevels]);
 
-        // Below line is temporary, only for testing purpose. _.repeat() is deprecated
+        // Process asynchronously
         try {
-            new parallel([this.autoFetch()]);
-        }
-        catch(e) {
-            console.log('Error occuring during parallel process');
+            setImmediate(() => this.autoFetch());
+        } catch (e) {
+            console.log('Error occurring during async process');
             console.log(e);
         }
     }

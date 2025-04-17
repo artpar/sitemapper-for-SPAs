@@ -21,37 +21,22 @@ const config = require('../config');
 const Rules = {
 
     checkRules(hrefs) {
-        const urlsToReturn = [];
-        hrefs.forEach((url) => {
-            const urlToPush = url;
-            if (this.doNotIgnore(urlToPush)) {
-                urlsToReturn.push(urlToPush);
-            }
-        });
-
-        return urlsToReturn;
+        // Use filter for cleaner code
+        return hrefs.filter(url => this.doNotIgnore(url));
     },
 
     notExemptions(url) {
-        for (let i = 0; i < config.ignoreStrings.length; i++) {
-
-            if (config.disableHashRoutes && url.includes('#')) {
-                return false;
-            }
-
-            if (!url.includes(config.strictPresence)) {
-                return false;
-            }
-
-            if (url.includes(config.ignoreStrings[i])) {
-                return false;
-            }
-
-            if (i === config.ignoreStrings.length - 1) {
-                return true;
-            }
+        // Early returns for quick filtering
+        if (config.disableHashRoutes && url.includes('#')) {
+            return false;
         }
 
+        if (!url.includes(config.strictPresence)) {
+            return false;
+        }
+
+        // Check if URL contains any of the strings to ignore
+        return !config.ignoreStrings.some(ignoreString => url.includes(ignoreString));
     },
 
     doNotIgnore(url) {

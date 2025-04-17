@@ -6,9 +6,11 @@
         "start": "node server.js"
     },
     "dependencies": {
-        "http": "0.0.0",
-        "paralleljs": "^0.2.1",
-        "puppeteer": "^1.14.0",
-        "underscore": "^1.12.1"
+        "lodash": "^4.17.21",
+        "paralleljs": "^1.1.0",
+        "puppeteer": "^24.6.1"
+    },
+    "engines": {
+        "node": ">=16.0.0"
     }
 }

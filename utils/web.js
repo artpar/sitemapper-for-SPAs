@@ -27,13 +27,25 @@ const WebService = {
 
     async getWeb(url) {
         try {
-            const browser = await puppeteer.launch({ headless: true });
+            // Updated to use headless: true which is the new recommended setting
+            const browser = await puppeteer.launch({
+                headless: false,
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
             const page = await browser.newPage();
-            await page.setViewport({ width: 1920, height: 926 });
+            await page.setViewport({width: 1920, height: 926});
             await page.goto(url, config.pageLoad);
             const links = await page.$$eval('a', as => as.map(a => a.href));
+
+            // Use proper promise-based timeout
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
+            // Close the browser to prevent memory leaks
+            await browser.close();
+
             return links;
         } catch (e) {
+            console.error('Error in getWeb:', e);
             return [];
         }
     }
