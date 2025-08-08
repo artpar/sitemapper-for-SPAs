@@ -19,38 +19,68 @@
 const http = require('http');
 const config = require('./config');
 const pages = config.urls;
-const parallel = require('paralleljs');
 const crawler = require('./crawler');
-
+const webService = require('./utils/web');
 
 const app = http.createServer((req, res) => {  
     res.writeHead(200, {'Content-Type': 'text/plain'});
-
     res.end('Sitemap generator!\n');
 });
 
-
-function crawlBusiness() {
+async function crawlBusiness() {
     try {
+        console.log('Starting sitemap generation...');
+        console.log(`Mode: ${config.autoCrawl ? 'Auto-crawl' : 'Manual'}`);
+        
         if (!config.autoCrawl) {
-            // Setting up processes
-            let processes = [];
-            pages.forEach((page) => processes.push(crawler.getXml(page, pages.length)))
-
-            // Running the process
-            new parallel(processes);
+            console.log(`Processing ${pages.length} URLs manually...`);
+            
+            const promises = pages.map(page => crawler.getXml(page, pages.length));
+            await Promise.all(promises);
         } else {
+            console.log(`Starting auto-crawl from base URL: ${config.base}`);
+            console.log(`Crawl level: ${config.crawlLevel}`);
+            
             process.setMaxListeners(Infinity);
             crawler.processes.push(config.base);
-            crawler.autoFetch();
+            await crawler.autoFetch();
         }
-    }
-    catch (e) {
-        console.log(e);
+    } catch (e) {
+        console.error('Error during crawling:', e);
+        await cleanup();
     }
 }
 
-// Enable below when cluster is disabled
+async function cleanup() {
+    console.log('Performing cleanup...');
+    try {
+        await webService.cleanup();
+    } catch (error) {
+        console.error('Error during cleanup:', error);
+    }
+    process.exit(0);
+}
+
+process.on('SIGINT', async () => {
+    console.log('\nReceived SIGINT, shutting down gracefully...');
+    await cleanup();
+});
+
+process.on('SIGTERM', async () => {
+    console.log('\nReceived SIGTERM, shutting down gracefully...');
+    await cleanup();
+});
+
+process.on('uncaughtException', async (error) => {
+    console.error('Uncaught Exception:', error);
+    await cleanup();
+});
+
+process.on('unhandledRejection', async (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    await cleanup();
+});
+
 startServer();
 
 function startServer() {
