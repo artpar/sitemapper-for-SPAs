@@ -8,7 +8,7 @@
     "dependencies": {
         "lodash": "^4.17.21",
         "paralleljs": "^1.1.0",
-        "puppeteer": "^24.6.1"
+        "puppeteer": "^24.16.0"
     },
     "engines": {
         "node": ">=16.0.0"

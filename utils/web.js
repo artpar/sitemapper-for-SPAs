@@ -35,13 +35,17 @@ const WebService = {
             const page = await browser.newPage();
             await page.setViewport({width: 1920, height: 926});
             await page.goto(url, config.pageLoad);
+            console.log("navigated to ", url)
             const links = await page.$$eval('a', as => as.map(a => a.href));
+            console.log("links to ", links)
 
             // Use proper promise-based timeout
+            console.log("waiting for page load")
             await new Promise(resolve => setTimeout(resolve, 5000));
 
             // Close the browser to prevent memory leaks
             await browser.close();
+            console.log("browser closed")
 
             return links;
         } catch (e) {

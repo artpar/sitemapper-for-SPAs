@@ -45,6 +45,8 @@ const crawler = {
             if (this.counter === limit) {
                 filesService.createXml(rulesService.sortLinks(this.allUrls));
             }
+        }).catch(e => {
+            console.error(e);
         });
     },
 
